@@ -8,24 +8,24 @@
 ---
 
 ## 📑 Table of Contents
-1. [Project Overview & Core Mission](#-project-overview--core-mission)
-2. [End-to-End System Architecture](#-end-to-end-system-architecture)
-3. [Hardware Component Suite & Sensor Integration](#-hardware-component-suite--sensor-integration)
+1. [Project Overview & Core Mission](#1--project-overview--core-mission)
+2. [End-to-End System Architecture](#2-️-end-to-end-system-architecture)
+3. [Hardware Component Suite & Sensor Integration](#3-️-hardware-component-suite--sensor-integration)
    - [A. Main Controller: ESP32-S3](#a-main-controller-esp32-s3)
    - [B. Voice Input: INMP441 MEMS Omnidirectional Microphone](#b-voice-input-inmp441-mems-omnidirectional-microphone)
    - [C. Voice Output: MAX98357A I2S Class-D Amplifier + Speaker](#c-voice-output-max98357a-i2s-class-d-amplifier--speaker)
    - [D. Touch & Hug Sensing: TTP223 Capacitive Touch Sensors](#d-touch--hug-sensing-ttp223-capacitive-touch-sensors)
    - [E. Motion & Play Sensing: MPU6050 6-Axis IMU](#e-motion--play-sensing-mpu6050-6-axis-imu)
    - [F. Visual Feedback: WS2812B Addressable RGB LEDs](#f-visual-feedback-ws2812b-addressable-rgb-leds)
-4. [Master Edge Firmware (All Hardware Combined)](#-master-edge-firmware)
-5. [Cloud AI & Safety Guardrail Pipeline](#-cloud-ai--safety-guardrail-pipeline)
-6. [Parental Intelligence Dashboard](#-parental-intelligence-dashboard)
-7. [Pitch Deck & Presentation Blueprint](#-pitch-deck--presentation-blueprint)
-8. [Local Simulation & Quickstart Guide](#-local-simulation--quickstart-guide)
+4. [Master Edge Firmware](#4--master-edge-firmware)
+5. [Cloud AI & Safety Guardrail Pipeline](#5--cloud-ai--safety-guardrail-pipeline)
+6. [Parental Intelligence Dashboard](#6--parental-intelligence-dashboard)
+7. [Pitch Deck & Presentation Blueprint](#7--pitch-deck--presentation-blueprint)
+8. [Local Simulation & Quickstart Guide](#8--local-simulation--quickstart-guide)
 
 ---
 
-## 🌟 Project Overview & Core Mission
+## 1. 🌟 Project Overview & Core Mission
 
 ### The Challenge
 Children are surrounded by passive screens that lead to sensory overload, reduced attention spans, and social isolation. Existing smart toys are either simple prerecorded soundboards or rigid command assistants (like Alexa or Siri) that lack contextual memory, empathy, and child-safe guardrails.
@@ -39,54 +39,18 @@ KYROS is a soft, huggable plush companion embedded with physical edge sensors an
 
 ---
 
-## 🏗️ End-to-End System Architecture
+## 2. 🏗️ End-to-End System Architecture
 
-```text
-       +-------------------------------------------------------------------------+
-       |                           KYROS PHYSICAL PLUSH                          |
-       |                                                                         |
-       |   [INMP441 Mic]       [TTP223 Touch]       [MPU6050 IMU]                |
-       |         |                    |                    |                     |
-       |     (I2S Bus)           (GPIO ISR)           (I2C Bus)                  |
-       |         \                    |                   /                      |
-       |          +------------------> v <---------------+                       |
-       |                           ESP32-S3                                      |
-       |                     (Dual-Core 240MHz)                                  |
-       |                          /        \                                     |
-       |                  (I2S DAC)        (GPIO PWM)                            |
-       |                      v                v                                 |
-       |              [MAX98357A Amp]     [WS2812B NeoPixel]                     |
-       |                     |                 |                                 |
-       |             [4Ω 3W Speaker]      (Heart Pulse)                          |
-       +----------------------|--------------------------------------------------+
-                              | Secure WebSocket (WSS - 16kHz PCM Audio & Events)
-                              v
-       +-------------------------------------------------------------------------+
-       |                          CLOUD INTELLIGENCE CORE                        |
-       |                                                                         |
-       |  [FastAPI Voice Gateway]                                                |
-       |            |                                                            |
-       |            v                                                            |
-       |  [Speech-to-Text: Whisper / Deepgram]                                   |
-       |            |                                                            |
-       |            v                                                            |
-       |  [Child Safety & Guardrail Filter]                                      |
-       |            |                                                            |
-       |            v                                                            |
-       |  [LLM Dialog Engine (Llama-3 / GPT-4o-mini)] <---> [Child Vector Memory]  |
-       |            |                                                            |
-       |            +----------------------------+                               |
-       |            |                            |                               |
-       |            v                            v                               |
-       |  [Text-to-Speech (TTS)]        [Sentiment & Mood Analytics Engine]      |
-       |   (Natural Warm Voice)                          |                       |
-       +------------|------------------------------------|-----------------------+
-                    | Audio Stream                       | Sync Metrics (JSON)
-                    v                                    v
-             [KYROS Speaker]               [Parental Companion Dashboard]
-```
+| Node | Interface / Protocol | Connected Components |
+| :--- | :--- | :--- |
+| **Edge Plush** | I2S, I2C, GPIO ISR | ESP32-S3, INMP441 Mic, MAX98357A Amp, MPU6050, TTP223 |
+| **Transport** | WSS (WebSockets Secure) | 16kHz PCM Audio Stream & Event Triggers |
+| **Cloud Core** | FastAPI + Whisper + LLM | Emotional Sentiment Classifier & Safety Guardrails |
+| **Parent Hub** | Web Client (HTTPS/REST) | Aggregated Insights & Curfew Control Dashboard |
+
 ---
-## 🛠️ Hardware Component Suite & Sensor Integration
+
+## 3. 🛠️ Hardware Component Suite & Sensor Integration
 
 Here is the operational breakdown, wiring pinout, and standalone verification code for every component inside KYROS.
 
@@ -161,7 +125,7 @@ Here is the operational breakdown, wiring pinout, and standalone verification co
 
 ---
 
-## ⚡ Master Edge Firmware (ESP32)
+## 4. ⚡ Master Edge Firmware
 
 ```cpp
 #include <WiFi.h>
@@ -214,53 +178,15 @@ void loop() {
 
 FastAPI WebSocket backend for real-time speech, emotional classification, and child safety filtering.
 
-    """
-    KYROS AI Core Gateway - FastAPI WebSocket & Sentiment Engine
-    Team: Heisen-De-Bug
-    """
+Key Backend Responsibilities:
+- Receives 16kHz audio / sensor payloads over low-latency WebSockets.
+- Evaluates real-time child sentiment using NLP heuristics and safety guardrails.
+- Formulates child-safe empathetic speech prompts while flagging anomalies for parents.
 
-    import json
-    from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-
-    app = FastAPI(title="KYROS Companion Core API")
-
-    def evaluate_emotional_state(text: str) -> dict:
-        text_lower = text.lower()
-        if any(word in text_lower for word in ["scared", "sad", "crying", "alone", "hurt"]):
-            return {"sentiment": "Anxious/Distressed", "alert": True}
-        return {"sentiment": "Joyful & Curious", "alert": False}
-
-    @app.websocket("/ws/companion")
-    async def companion_socket(websocket: WebSocket):
-        await websocket.accept()
-        print("[KYROS Core] ESP32 Plush Connected.")
-        try:
-            while True:
-                raw_data = await websocket.receive_text()
-                payload = json.loads(raw_data)
-                
-                if payload.get("event") == "PHYSICAL_HUG":
-                    response = {
-                        "action": "SPEAK",
-                        "text": "Mmm, that hug feels so warm! How was your day?",
-                        "led": "HEARTBEAT"
-                    }
-                    await websocket.send_text(json.dumps(response))
-                    
-                elif payload.get("event") == "SPEECH_INPUT":
-                    child_speech = payload.get("text", "")
-                    analysis = evaluate_emotional_state(child_speech)
-                    
-                    reply = "I am right here with you. Everything is okay!" if analysis["alert"] else "Tell me more about that!"
-                    response = {
-                        "action": "SPEAK",
-                        "text": reply,
-                        "sentiment": analysis["sentiment"],
-                        "alert": analysis["alert"]
-                    }
-                    await websocket.send_text(json.dumps(response))
-        except WebSocketDisconnect:
-            print("[KYROS Core] Plush disconnected.")
+Backend Pipeline Logic:
+- Route: /ws/companion (Full Duplex WebSocket)
+- Event: PHYSICAL_HUG -> Triggers empathetic voice prompt & heartbeat LED state.
+- Event: SPEECH_INPUT -> Runs child safety evaluation before sending speech response.
 
 ---
 
@@ -268,40 +194,12 @@ FastAPI WebSocket backend for real-time speech, emotional classification, and ch
 
 A secure, non-invasive overview for parents to track emotional trends, physical hugs, and curfews.
 
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <title>KYROS Parent Companion Hub</title>
-      <script src="https://cdn.tailwindcss.com"></script>
-    </head>
-    <body class="bg-slate-50 text-slate-800 font-sans p-6 md:p-10">
-      <div class="max-w-5xl mx-auto">
-        <header class="flex justify-between items-center pb-6 border-b border-slate-200 mb-8">
-          <div>
-            <h1 class="text-3xl font-black text-indigo-600">🧸 KYROS Parent Hub</h1>
-            <p class="text-sm text-slate-500">Child: Aarav | Status: <span class="text-emerald-600 font-semibold">● Online</span></p>
-          </div>
-          <button class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">Settings & Curfews</button>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-xs uppercase font-bold text-slate-400">Dominant Mood Today</span>
-            <p class="text-2xl font-bold text-amber-500 mt-2">😊 Joyful & Curious</p>
-          </div>
-          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-xs uppercase font-bold text-slate-400">Physical Affection</span>
-            <p class="text-2xl font-bold text-rose-500 mt-2">26 Hugs Logged</p>
-          </div>
-          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-xs uppercase font-bold text-slate-400">Safety & Distress Radar</span>
-            <p class="text-2xl font-bold text-emerald-600 mt-2">100% Safe</p>
-          </div>
-        </div>
-      </div>
-    </body>
-    </html>
+| Metric | Status / Value | Parental Insight |
+| :--- | :--- | :--- |
+| Dominant Mood | Joyful & Curious | Derived from natural daily conversational sentiment |
+| Physical Affection | 26 Hugs Logged | Regular positive tactile reassurance detected |
+| Safety Guardrail | 100% Safe | Zero distress or predatory flags triggered |
+| Screen-Free Play | 2h 15m Active | Stories, drawing companions, and voice play |
 
 ---
 
@@ -309,29 +207,28 @@ A secure, non-invasive overview for parents to track emotional trends, physical 
 
 | Slide # | Slide Title | Core Talking Points |
 | :--- | :--- | :--- |
-| **01** | **Title & Vision** | *KYROS*: Smart, Screen-Free AI Plush Companion by Team **Heisen-De-Bug**. |
-| **02** | **The Crisis** | Screen fatigue isolates children. Standard voice assistants lack empathy and safety. |
-| **03** | **The Innovation** | Tactile affection sensors + child-safe LLM conversational pipeline with sub-800ms latency. |
-| **04** | **Hardware Stack** | ESP32-S3, INMP441 mic, MAX98357A amp, TTP223 hug sensors, MPU6050 motion. |
-| **05** | **Cloud & Guardrails** | Ephemeral voice stream, strict child safety guardrails, no audio storage. |
-| **06** | **Parental Ecosystem** | Real-time sentiment metrics and gentle alerts without intruding on privacy. |
-| **07** | **Scalability & Future** | Local languages, modular skins, and child therapy kits. |
+| 01 | Title & Vision | KYROS: Smart, Screen-Free AI Plush Companion by Team Heisen-De-Bug. |
+| 02 | The Crisis | Screen fatigue isolates children. Standard voice assistants lack empathy and safety. |
+| 03 | The Innovation | Tactile affection sensors + child-safe LLM conversational pipeline with sub-800ms latency. |
+| 04 | Hardware Stack | ESP32-S3, INMP441 mic, MAX98357A amp, TTP223 hug sensors, MPU6050 motion. |
+| 05 | Cloud & Guardrails | Ephemeral voice stream, strict child safety guardrails, no audio storage. |
+| 06 | Parental Ecosystem | Real-time sentiment metrics and gentle alerts without intruding on privacy. |
+| 07 | Scalability & Future | Local languages, modular skins, and child therapy kits. |
 
 ---
 
 ## 8. 🚀 Local Simulation & Quickstart Guide
 
-### Step 1: Run Backend Server
-    git clone https://github.com/your-username/kyros-smart-companion.git
-    cd kyros-smart-companion/backend
-    pip install fastapi uvicorn websockets
-    python -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+1. Backend Server Setup:
+   - Command: git clone https://github.com/your-username/kyros.git
+   - Command: cd kyros/backend
+   - Command: pip install fastapi uvicorn websockets
+   - Command: python -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 
-### Step 2: Open Parent Dashboard
-Open `dashboard/index.html` in Google Chrome or any modern web browser.
-
-### Step 3: Flash ESP32 Firmware
-Open `firmware/esp32_master_firmware.ino` inside Arduino IDE, set board target to **ESP32S3 Dev Module**, update Wi-Fi credentials, and click **Upload**!
+2. Hardware Flashing:
+   - Open firmware/esp32_master_firmware.ino in Arduino IDE.
+   - Set board to ESP32S3 Dev Module.
+   - Enter local Wi-Fi credentials and click Upload.
 
 ---
 
