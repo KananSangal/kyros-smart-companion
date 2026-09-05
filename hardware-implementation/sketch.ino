@@ -2,17 +2,26 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-Adafruit_SSD1306 display(128, 64, &Wire, -1);
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 
-const int BUTTON_PIN = 2; // Touch sensor input
-const int BUZZER_PIN = 8; // Audio feedback output
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// ESP32 GPIO Pins
+const int BUTTON_PIN = 4;
+const int BUZZER_PIN = 18;
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(BUZZER_PIN, OUTPUT);
-  
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.clearDisplay();
+
+  // ESP32 default I2C pins: SDA=21, SCL=22
+  Wire.begin(21, 22);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    while(true); 
+  }
+
   showHappyFace();
 }
 
@@ -24,6 +33,7 @@ void loop() {
   } else {
     showHappyFace();
   }
+  delay(50);
 }
 
 void showHappyFace() {
@@ -49,7 +59,6 @@ void showCuddleFace() {
 }
 
 void playHappyChime() {
-  // Do simple tones cute sound banane ke liye
   tone(BUZZER_PIN, 523, 100); // Note C5
   delay(120);
   tone(BUZZER_PIN, 659, 150); // Note E5
