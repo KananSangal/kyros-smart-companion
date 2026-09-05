@@ -1,2 +1,8 @@
-# KYROS Documentation & Pitch Assets
-Contains project presentation, pitch decks, and technical architecture references.
+# 📂 KYROS Documentation & Assets
+
+This folder contains the project pitch deck, presentations, and technical resources.
+
+---
+
+### 🔗 Quick Navigation
+- ⬅️ **[Back to Main Project Documentation (Full Architecture & Code)](../README.md)**
